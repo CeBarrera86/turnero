@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,8 +23,7 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::group(
-    ['middleware' => 'auth'],
+Route::middleware(['auth'])->group(
     function () {
         // CRUD Administradores
         Route::resource('estados', App\Http\Controllers\EstadoController::class);

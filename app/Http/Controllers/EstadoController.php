@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Estado;
 use App\Http\Requests\StoreEstadoRequest;
 use App\Http\Requests\UpdateEstadoRequest;
+use Illuminate\Support\Facades\Auth;
 
 class EstadoController extends Controller
 {
@@ -16,6 +17,7 @@ class EstadoController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('role:1');
     }
 
     /**
