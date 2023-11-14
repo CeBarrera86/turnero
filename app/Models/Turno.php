@@ -20,8 +20,8 @@ class Turno extends Model
     ];
 
     protected $dispatchesEvents = [
-        'created' => nuevoTurno::class,
-        'updated' => nuevoTurno::class,
+        'created' => nuevoTurno::class, // Se dispara cuando el USUARIO llama a atender a un nuevo ticket
+        'updated' => nuevoTurno::class, // Se dispara cuando el USUARIO llama a atender a un nuevo ticket
     ];
 
     public function puestos()

@@ -7,7 +7,7 @@ use App\Models\Historial;
 use App\Models\Puesto;
 use App\Models\Ticket;
 use App\Models\Turno;
-use App\Events\llamarTicket;
+use App\Events\mostrarEnPantalla;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Consultas;
@@ -33,61 +33,6 @@ class TurnoController extends Controller
 
         return response()->json($data);
     }
-
-    // public function checkNewData(Request $request)
-    // {
-    //     $cajaDOM = (isset($request->cajaDOM)) ? $request->cajaDOM : [];
-    //     $cajaDOMSide = (isset($request->cajaDOMSide)) ? $request->cajaDOMSide : [];
-    //     $boxDOM = (isset($request->boxDOM)) ? $request->boxDOM : [];
-    //     $boxDOMSide = (isset($request->boxDOMSide)) ? $request->boxDOMSide : [];
-
-    //     function crearArreglo($array)
-    //     {
-    //         foreach ($array as $item) {
-    //             $arreglo[] = $item->alfa;
-    //         }
-    //         return $arreglo;
-    //     }
-
-    //     $caja = Consultas::turnos()
-    //         ->where('tickets.sector', 1) // Para las CAJAS
-    //         ->where('historiales.estado', 1) // En estado llamando
-    //         ->get();
-    //     $turnosCaja = (count($caja) > 0) ? crearArreglo($caja) : [];
-
-    //     $cajaSidebar = Consultas::turnos()
-    //         ->where('tickets.sector', 1) // Para las CAJAS
-    //         ->where('historiales.estado', 3) // En estado Atendido
-    //         ->get();
-    //     $turnosCajaSidebar = (count($cajaSidebar) > 0) ? crearArreglo($cajaSidebar) : [];
-
-    //     $box = Consultas::turnos()
-    //         ->where('tickets.sector', '!=', 1) // Para los BOX
-    //         ->where('historiales.estado', 1) // En estado llamando
-    //         ->get();
-    //     $turnosBox = (count($box) > 0) ? crearArreglo($box) : [];
-
-    //     $boxSidebar = Consultas::turnos()
-    //         ->where('tickets.sector', '!=', 1) // Para los BOX
-    //         ->where('historiales.estado', 3) // En estado Atendido
-    //         ->get();
-    //     $turnosBoxSidebar = (count($boxSidebar) > 0) ? crearArreglo($boxSidebar) : [];
-
-    //     $turno = (count($cajaDOM) != 0 or count($boxDOM) != 0) ? array_merge($cajaDOM, $boxDOM) : []; // Vienen del DOM
-    //     $turnoSidebar = (count($cajaDOMSide) != 0 or count($boxDOMSide) != 0) ? array_merge($cajaDOMSide, $boxDOMSide) : []; // Vienen del DOM
-    //     $nuevoTurno = (count($turnosCaja) != 0 or count($turnosBox) != 0) ? array_merge($turnosCaja, $turnosBox) : []; // Vienen de la DB
-    //     $nuevoTurnoSidebar = (count($turnosCajaSidebar) != 0 or count($turnosBoxSidebar) != 0) ? array_merge($turnosCajaSidebar, $turnosBoxSidebar) : []; // Vienen de la DB
-
-    //     $consulta = Consultas::controlRetorno($turno, $turnoSidebar, $nuevoTurno, $nuevoTurnoSidebar);
-
-    //     return response()->json([
-    //         'pantalla' => $consulta,
-    //         'caja' => $caja,
-    //         'cajaSidebar' => $cajaSidebar->items(),
-    //         'box' => $box,
-    //         'boxSidebar' => $boxSidebar->items(),
-    //     ]);
-    // }
 
     public function checkDataCaja()
     {
@@ -126,58 +71,55 @@ class TurnoController extends Controller
 
     public function store(Request $request)
     {
+        // Buscar el turno por el ticket
         $turno = Turno::where('ticket', $request->id)->first();
         if (empty($turno)) {
-            // Solicito a la DB el puesto de trabajo correspondiente
-            $puesto = Puesto::select('puestos.id')
-                ->leftjoin('users', 'users.id', 'puestos.user')
+            // Obtener el puesto de trabajo correspondiente
+            $puestoId = Puesto::select('puestos.id')
+                ->leftJoin('users', 'users.id', 'puestos.user')
                 ->where('users.username', Auth::user()->username)
-                ->orderBy('puestos.id', 'DESC')
-                ->first();
-            // Se genera el turno en la DB
+                ->orderByDesc('puestos.id')
+                ->value('id');
+
+            // Crear el turno en la base de datos
             $turno = Turno::create([
-                'puesto' => $puesto->id,
+                'puesto' => $puestoId,
                 'ticket' => $request->id
             ]);
         } else {
+            // Verificar si el usuario cambió de puesto
             if ($turno->puestos->user != Auth::user()->puestos->user) {
-                // Solicito a la DB el puesto de trabajo correspondiente
-                $puesto = Puesto::select('puestos.id')
-                    ->leftjoin('users', 'users.id', 'puestos.user')
+                // Obtener el nuevo puesto de trabajo correspondiente
+                $puestoId = Puesto::select('puestos.id')
+                    ->leftJoin('users', 'users.id', 'puestos.user')
                     ->where('users.username', Auth::user()->username)
-                    ->orderBy('puestos.id', 'DESC')
-                    ->first();
-                // Actualizo el turno de la base de dato
-                $turno->update(['puesto' => $puesto->id]);
+                    ->orderByDesc('puestos.id')
+                    ->value('id');
+
+                // Actualizar el turno en la base de datos
+                $turno->update(['puesto' => $puestoId]);
             }
         }
-        // Actualizo la variable "llamado" = 1 => El ticket está siendo llamado
+        // Actualizar la variable "llamado" = 1 => El ticket está siendo llamado
         Ticket::find($request->id)->update([
             'derivado' => 0,
             'llamado' => 1
         ]);
         // Crear Historial
-        if ($request->buscar) {
-            Historial::create([
-                'turno' => $turno->id,
-                'puesto' => $turno->puesto,
-                'estado' => 1
-            ]);
-        } else {
-            Historial::create([
-                'turno' => $turno->id,
-                'puesto' => $turno->puesto,
-                'estado' => 5
-            ]);
-        }
-        // Evento para pantalla
+        $estado = $request->buscar ? 1 : 5;
+        Historial::create([
+            'turno' => $turno->id,
+            'puesto' => $turno->puesto,
+            'estado' => $estado
+        ]);
+        // Evento para la pantalla
         if ($request->llamar) {
             $ticket = Ticket::with(['turnos', 'turnos.puestos', 'turnos.puestos.mostradores'])
                 ->where('tickets.id', $request->id)
                 ->first();
-            event(new llamarTicket($ticket));
-        }
 
+            event(new mostrarEnPantalla($ticket));
+        }
         return response()->json(['success' => true]);
     }
 
@@ -185,17 +127,14 @@ class TurnoController extends Controller
     {
         // Obtengo datos del turno
         $turno = Turno::find($id);
-
         // Obtengo el id del estado según el valor de $request->estado
         $estadoId = Estado::where('letra', $request->estado)->value('id');
-
         // Crear Historial
         Historial::create([
             'turno' => $id,
             'puesto' => $turno->puesto,
             'estado' => $estadoId
         ]);
-
         if ($request->estado == 'D') {
             // Actualizo valor "llamado" del ticket
             Ticket::find($turno->ticket)->update([
@@ -209,7 +148,6 @@ class TurnoController extends Controller
                 'llamado' => 0
             ]);
         }
-
         // Fecha de actualización en Turno
         $turno->update(['updated_at' => now()]);
 

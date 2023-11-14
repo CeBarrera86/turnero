@@ -8,12 +8,9 @@ use App\Listeners\loginSession;
 use Illuminate\Auth\Events\Logout;
 use App\Listeners\logoutSession;
 
-use App\Events\llamarTicket;
-
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {

@@ -2,14 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ticket;
-use App\Models\Turno;
-use Illuminate\Http\Request;
-use App\Http\Requests\BuscarTicketRequest;
-use Facade\FlareClient\Http\Response;
-
-use function PHPUnit\Framework\isNull;
-
 class CajaController extends Controller
 {
     /**

@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Mostrador;
 use App\Models\Puesto;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\StorePuestoRequest;
-use App\Http\Requests\UpdatePuestoRequest;
 
 class PuestoController extends Controller
 {
@@ -19,14 +18,16 @@ class PuestoController extends Controller
     public function store(int $id)
     {
         // Obtengo mostrador según IP del usuario que se conecta
-        $ip = $_SERVER['REMOTE_ADDR'];
+        $ip = Request::ip();
         $mostrador = Mostrador::where('ip', $ip)->first();
         // Verifico si ya existe un login para un usuario en particular. Si no existe, creo el puesto.
-        $puesto = Puesto::where('user', $id)->wheredate('puestos.login', '>=', date(today()))->get();
+        $puestoExists = Puesto::where('user', $id)
+            ->whereDate('login', '>=', today())
+            ->exists();
 
-        if ($puesto->isEmpty()) {
+        if (!$puestoExists) {
             Puesto::create([
-                'mostrador' => isset($mostrador) ? $mostrador['id'] : 1000, // 100 = 127.0.0.1 (PRUEBA)
+                'mostrador' => optional($mostrador)->id ?? 100, // 100 = 127.0.0.1 (PRUEBA)
                 'user' => $id,
                 'login' => now(),
                 'logout' => null,
@@ -35,7 +36,6 @@ class PuestoController extends Controller
 
         return;
     }
-
     /**
      * Update the specified resource in storage.
      *
@@ -45,9 +45,9 @@ class PuestoController extends Controller
      */
     public function update(int $id)
     {
-        $datos = DB::table('puestos')
+        DB::table('puestos')
             ->where('user', $id)
-            ->wheredate('puestos.login', '>=', date(today()))
+            ->whereDate('login', '>=', now()->today())
             ->update(['logout' => now()]);
 
         return;

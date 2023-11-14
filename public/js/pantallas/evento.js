@@ -1,5 +1,5 @@
-Echo.channel('llamar-ticket')
-    .listen('llamarTicket', (data) => {
+Echo.channel('mostrar-pantalla')
+    .listen('mostrarEnPantalla', (data) => {
         Swal.fire({
             showConfirmButton: false,
             width: 1000,

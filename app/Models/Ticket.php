@@ -25,8 +25,8 @@ class Ticket extends Model
     ];
 
     protected $dispatchesEvents = [
-        'created' => nuevoTicket::class,
-        'updated' => eliminarTicket::class,
+        'created' => nuevoTicket::class, // Ticket creado por TOTEM
+        'updated' => eliminarTicket::class, // Ticket eliminado por USUARIOS
     ];
 
     public function turnos()

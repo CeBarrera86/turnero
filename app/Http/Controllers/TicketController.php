@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\newTicket;
 use App\Models\Cliente;
 use App\Models\Sector;
 use App\Models\Ticket;
@@ -35,32 +34,33 @@ class TicketController extends Controller
     public function search(UpdateTicketRequest $request)
     {
         $dato = $request->all();
+        // Buscar el cliente en la base de datos local
         $cliente = Cliente::where('dni', $dato['dni'])->first();
         if (is_null($cliente)) {
-            // Busco el cliente en la Base de Datos de GeaCorpico
-            $cliente = DB::connection('sqlsrv')
+            // Buscar el cliente en la base de datos GeaCorpico
+            $clienteGeaCorpico = DB::connection('sqlsrv')
                 ->table('GeaCorpico.dbo.CLIENTE_DOCUMENTO')
                 ->leftjoin('GeaCorpico.dbo.CLIENTE', 'CLI_ID', '=', 'CLD_CLIENTE')
                 ->select('CLD_CLIENTE', 'CLD_NUMERO_DOCUMENTO', 'CLI_TITULAR', 'CLI_E_MAIL', 'CLI_TELEFONO_CELULAR')
                 ->where('CLD_NUMERO_DOCUMENTO', $dato['dni'])
                 ->first();
-            // Si existe, lo agrego a la Base de Datos local
-            if (!is_null($cliente)) {
-                $cli_DB = array(
-                    "id" => null,
-                    "suministro" => $cliente->CLD_CLIENTE,
-                    "dni" => $cliente->CLD_NUMERO_DOCUMENTO,
-                    "titular" => $cliente->CLI_TITULAR,
-                    "email" => $cliente->CLI_E_MAIL,
-                    "celular" => $cliente->CLI_TELEFONO_CELULAR
-                );
-                Cliente::create($cli_DB);
-                $cliente = Cliente::where('dni', $cliente->CLD_NUMERO_DOCUMENTO)->first();;
+            if (!is_null($clienteGeaCorpico)) {
+                // Si existe en GeaCorpico, agregarlo a la base de datos local
+                $clienteDB = Cliente::create([
+                    "suministro" => $clienteGeaCorpico->CLD_CLIENTE,
+                    "dni" => $clienteGeaCorpico->CLD_NUMERO_DOCUMENTO,
+                    "titular" => $clienteGeaCorpico->CLI_TITULAR,
+                    "email" => $clienteGeaCorpico->CLI_E_MAIL,
+                    "celular" => $clienteGeaCorpico->CLI_TELEFONO_CELULAR,
+                ]);
+                // Actualizar la variable $cliente para que contenga la instancia de Cliente creada
+                $cliente = $clienteDB;
             } else {
-                // Si NO existe, solicito a la Base de Datos local el "id = 1" => INVITADO
-                $cliente = Cliente::where('id', 1)->first();
+                // Si NO existe en GeaCorpico, obtener el cliente "INVITADO" de la base de datos local
+                $cliente = Cliente::find(1);
             }
         }
+        // Obtener todos los sectores
         $sectores = Sector::all();
 
         return view('totem/opciones', compact('cliente', 'sectores'));
@@ -100,11 +100,7 @@ class TicketController extends Controller
             'eliminado' => 0,
         ]);
 
-        // Impresion::ticket($sector->letra, $num, $cantidad);
-
-        // broadcast(new newTicket($sector->id));
-        // event(new newTicket($sector->id));
-        // newTicket::dispatch($sector->id);
+        Impresion::ticket($sector->letra, $num, $cantidad);
 
         return redirect()->route('totem.index')->with('create', 'ok');
     }
@@ -118,68 +114,56 @@ class TicketController extends Controller
      */
     public function update($id)
     {
-        // Actualizo valor "eliminado" del ticket
-        $data = Ticket::find($id)->update([
-            'eliminado' => 1,
-            'updated_at' => now()
-        ]);
-        if ($data) {
+        $ticket = Ticket::find($id);
+        if ($ticket) {
+            $ticket->update([
+                'eliminado' => 1,
+                'updated_at' => now()
+            ]);
             return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false]);
         }
+        return response()->json(['success' => false]);
     }
 
     public function verificarDisponibles(Request $request)
     {
         $sector = $request->sector;
         $paginate = 3;
-
         $tickets = Consultas::tickets()
-        ->where('tickets.sector', $sector)
-        ->paginate($paginate);
-
-        if ($tickets->isEmpty()) {
-            $arrResponse = array('status' => false, 'tickets' => null);
-        } else {
-            $arrResponse = array('status' => true, 'tickets' => $tickets->items());
-        }
-
-        return response()->json($arrResponse);
+            ->where('tickets.sector', $sector)
+            ->paginate($paginate);
+        $status = $tickets->isNotEmpty();
+        return response()->json([
+            'status' => $status,
+            'tickets' => $status ? $tickets->items() : null,
+        ]);
     }
 
     public function verificarDerivados(Request $request)
     {
         $sector = $request->sector;
         $paginate = 3;
-
         $tickets = Consultas::tickets(1)
-        ->where('tickets.sector', $sector)
-        ->paginate($paginate);
+            ->where('tickets.sector', $sector)
+            ->paginate($paginate);
+        $status = $tickets->isNotEmpty();
 
-        if ($tickets->isEmpty()) {
-            $arrResponse = array('status' => false, 'tickets' => null);
-        } else {
-            $arrResponse = array('status' => true, 'tickets' => $tickets->items());
-        }
-
-        return response()->json($arrResponse);
+        return response()->json([
+            'status' => $status,
+            'tickets' => $status ? $tickets->items() : null,
+        ]);
     }
 
     public function searchTicket(Request $request)
     {
         $alfa = $request->alfa;
-
         $ticket = Consultas::tickets()
-        ->where('tickets.alfa', $alfa)
-        ->first();
+            ->where('tickets.alfa', $alfa)
+            ->first();
 
-        if ($ticket) {
-            $arrResponse = array('status' => true, 'ticket' => $ticket);
-        } else {
-            $arrResponse = array('status' => false, 'ticket' => null);
-        }
-
-        return response()->json($arrResponse);
+        return response()->json([
+            'status' => (bool) $ticket,
+            'ticket' => $ticket,
+        ]);
     }
 }

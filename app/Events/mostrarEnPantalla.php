@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class llamarTicket implements ShouldBroadcast
+class mostrarEnPantalla implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -33,6 +33,6 @@ class llamarTicket implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('llamar-ticket');
+        return new Channel('mostrar-pantalla');
     }
 }
