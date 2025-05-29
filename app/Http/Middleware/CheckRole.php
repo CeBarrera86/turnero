@@ -25,8 +25,11 @@ class CheckRole
         // Obtener el usuario autenticado
         $user = Auth::user();
 
+        // Convertir la cadena de roles proporcionada en un array
+        $allowedRoles = explode('|', $roles[0]);
+
         // Verificar si el usuario tiene uno de los roles proporcionados
-        foreach ($roles as $role) {
+        foreach ($allowedRoles as $role) {
             if ($user->role == $role) {
                 return $next($request);
             }

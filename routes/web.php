@@ -2,7 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
+
+
+use Mike42\Escpos\Printer;
+use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,8 +31,11 @@ Route::middleware(['auth'])->group(
         // CRUD Administradores
         Route::resource('estados', App\Http\Controllers\EstadoController::class);
         Route::resource('mostradores', App\Http\Controllers\MostradorController::class);
+        Route::resource('publicidades', App\Http\Controllers\PublicidadController::class);
         Route::resource('roles', App\Http\Controllers\RolController::class);
+        Route::get('sector/sectores', [App\Http\Controllers\SectorController::class, 'sectores'])->name('sector.sectores');
         Route::resource('sectores', App\Http\Controllers\SectorController::class);
+        Route::resource('tareas', App\Http\Controllers\TareaController::class);
         Route::resource('users', App\Http\Controllers\UserController::class);
 
         // Rutas para Secciones
@@ -40,26 +46,21 @@ Route::middleware(['auth'])->group(
         Route::get('ticket/verificarDisponibles', [App\Http\Controllers\TicketController::class, 'verificarDisponibles'])->name('ticket.verificarDisponibles');
         Route::get('ticket/verificarDerivados', [App\Http\Controllers\TicketController::class, 'verificarDerivados'])->name('ticket.verificarDerivados');
         Route::get('ticket/searchTicket', [App\Http\Controllers\TicketController::class, 'searchTicket'])->name('ticket.searchTicket');
-        Route::resource('ticket', App\Http\Controllers\TicketController::class)->except([
-            'index', 'store'
-        ]);
-        Route::get('turno/checkTurno', [App\Http\Controllers\TurnoController::class, 'checkTurno'])->name('turno.checkTurno');
-        Route::resource('turno', App\Http\Controllers\TurnoController::class)->except([
-            'index'
-        ]);
+        Route::resource('ticket', App\Http\Controllers\TicketController::class);
+
+        Route::get('turno/verificarSolicitado', [App\Http\Controllers\TurnoController::class, 'verificarSolicitado'])->name('turno.verificarSolicitado');
+        Route::get('turno/usuarios', [App\Http\Controllers\TurnoController::class, 'usuarios'])->name('turno.usuarios');
+        Route::resource('turno', App\Http\Controllers\TurnoController::class);
     }
 );
 
 // Rutas para Totem
-Route::post('totem/opciones', [App\Http\Controllers\TicketController::class, 'search'])->name('totem.search');
-Route::resource('totem', App\Http\Controllers\TicketController::class)->only([
-    'index', 'store'
-]);
+Route::post('totem/search', [App\Http\Controllers\TotemController::class, 'search'])->name('totem.search');
+Route::get('totem/opciones', [App\Http\Controllers\TotemController::class, 'opciones'])->name('totem.opciones');
+Route::get('totem/tareas', [App\Http\Controllers\TotemController::class, 'tareas'])->name('totem.tareas');
+Route::resource('totem', App\Http\Controllers\TotemController::class);
 
-// Rutas para TV
-Route::get('pantalla/checkDataCaja', [App\Http\Controllers\TurnoController::class, 'checkDataCaja'])->name('pantalla.checkDataCaja');
-Route::get('pantalla/checkDataBox', [App\Http\Controllers\TurnoController::class, 'checkDataBox'])->name('pantalla.checkDataBox');
-Route::get('pantalla/checkSidebar', [App\Http\Controllers\TurnoController::class, 'checkSidebar'])->name('pantalla.checkSidebar');
-Route::resource('pantalla', App\Http\Controllers\TurnoController::class)->only([
-    'index'
-]);
+// Rutas para Pantallas
+Route::get('pantalla/publicidad', [App\Http\Controllers\PantallaController::class, 'publicidad'])->name('pantalla.publicidad');
+Route::get('pantalla/ticketsAtendidos', [App\Http\Controllers\PantallaController::class, 'ticketsAtendidos'])->name('pantalla.ticketsAtendidos');
+Route::resource('pantalla', App\Http\Controllers\PantallaController::class);

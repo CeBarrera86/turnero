@@ -10,7 +10,8 @@
         </div>
         <div class="navbar-wrapper col-md-3 justify-content-center">
             <span class="navbar-brand">
-                <strong>{{ $titlePage }}</strong>
+                {{-- <strong>{{ $titlePage }}</strong> --}}
+                <strong>Gestión de Turnos</strong>
             </span>
         </div>
         <div class="navbar-wrapper col-md-3 justify-content-end">

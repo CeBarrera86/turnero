@@ -15,8 +15,8 @@ class Estado extends Model
         'descripcion',
     ];
 
-    public function historiales()
+    public function tickets()
     {
-        return $this->hasMany('App\Models\Historial', 'estado');
+        return $this->hasMany('App\Models\Ticket', 'estado');
     }
 }

@@ -13,11 +13,10 @@ class Cliente extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'suministro',
         'dni',
         'titular',
-        'email',
         'celular',
+        'email',
     ];
 
     public function tickets()

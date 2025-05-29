@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
+
 class CajaController extends Controller
 {
     /**
@@ -21,6 +23,12 @@ class CajaController extends Controller
      */
     public function index()
     {
-        return view('secciones.cajas.index');
+        $userData = [
+            'userId' => Auth::id(),
+            'puestoId' => Auth::user()->puestos->id,
+            'sectorId' => Auth::user()->puestos->mostradores->sector,
+        ];
+
+        return view('secciones.cajas.index', compact('userData'));
     }
 }

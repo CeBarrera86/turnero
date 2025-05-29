@@ -2,155 +2,126 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Estado;
+use Illuminate\Support\Collection;
+use App\Events\listarTickets;
 use App\Models\Historial;
 use App\Models\Puesto;
 use App\Models\Ticket;
 use App\Models\Turno;
-use App\Events\mostrarEnPantalla;
+use App\Models\User;
+use App\Events\ventanaTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Consultas;
 
 class TurnoController extends Controller
 {
-    public function index()
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
     {
-        return view('pantalla.index');
+        $this->middleware('auth');
     }
 
-    public function checkTurno(Request $request)
+    public function verificarSolicitado(Request $request)
     {
-        $turno = Consultas::turnos()
-            ->where('tickets.id', $request->id)
-            ->first();
-
-        if ($turno && $turno->estado != 6 && $turno->estado != 3) {
-            $data = ['status' => true, 'turno' => $turno];
-        } else {
-            $data = ['status' => false, 'turno' => null];
+        try {
+            $ticketSolicitado = Consultas::ticketSolicitado($request->puestoId);
+            if ($ticketSolicitado) {
+                return response()->json(['status' => true, 'ticket' => $ticketSolicitado]);
+            }
+            return response()->json(['status' => false, 'message' => 'No se encontró ticket solicitado.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Error al consultar el ticket solicitado.'], 500);
         }
-
-        return response()->json($data);
-    }
-
-    public function checkDataCaja()
-    {
-        $turnos = Consultas::turnos()
-            ->where('tickets.sector', 1) // Para las CAJAS
-            ->where('historiales.estado', 5) // En estado llamando
-            ->get();
-
-        $data = ($turnos->isEmpty()) ? array('status' => false, 'turnos' => null) : array('status' => true, 'turnos' => $turnos);
-
-        return response()->json($data);
-    }
-
-    public function checkDataBox()
-    {
-        $turnos = Consultas::turnos()
-            ->where('tickets.sector', '!=', 1) // Para los BOX
-            ->where('historiales.estado', 5) // En estado llamando
-            ->get();
-
-        $data = ($turnos->isEmpty()) ? array('status' => false, 'turnos' => null) : array('status' => true, 'turnos' => $turnos);
-
-        return response()->json($data);
-    }
-
-    public function checkSidebar()
-    {
-        $turnos = Consultas::turnos()
-            ->where('historiales.estado', 1) // Todos los turnos en estado Atendido
-            ->get();
-
-        $data = ($turnos->isEmpty()) ? array('status' => false, 'turnos' => null) : array('status' => true, 'turnos' => $turnos);
-
-        return response()->json($data);
     }
 
     public function store(Request $request)
     {
-        // Buscar el turno por el ticket
+        $user = Auth::user();
+        $puestoId = Puesto::where('user', $user->id)->orderByDesc('id')->value('id');
         $turno = Turno::where('ticket', $request->id)->first();
         if (empty($turno)) {
-            // Obtener el puesto de trabajo correspondiente
-            $puestoId = Puesto::select('puestos.id')
-                ->leftJoin('users', 'users.id', 'puestos.user')
-                ->where('users.username', Auth::user()->username)
-                ->orderByDesc('puestos.id')
-                ->value('id');
-
-            // Crear el turno en la base de datos
             $turno = Turno::create([
                 'puesto' => $puestoId,
                 'ticket' => $request->id
             ]);
         } else {
             // Verificar si el usuario cambió de puesto
-            if ($turno->puestos->user != Auth::user()->puestos->user) {
-                // Obtener el nuevo puesto de trabajo correspondiente
-                $puestoId = Puesto::select('puestos.id')
-                    ->leftJoin('users', 'users.id', 'puestos.user')
-                    ->where('users.username', Auth::user()->username)
-                    ->orderByDesc('puestos.id')
-                    ->value('id');
-
-                // Actualizar el turno en la base de datos
+            if ($turno->puesto != $user->puesto) {
                 $turno->update(['puesto' => $puestoId]);
             }
         }
-        // Actualizar la variable "llamado" = 1 => El ticket está siendo llamado
-        Ticket::find($request->id)->update([
-            'derivado' => 0,
-            'llamado' => 1
-        ]);
+        $turno->touch(); // Forzar la actualización del modelo
         // Crear Historial
-        $estado = $request->buscar ? 1 : 5;
         Historial::create([
             'turno' => $turno->id,
             'puesto' => $turno->puesto,
-            'estado' => $estado
+            'estado' => 1
         ]);
-        // Evento para la pantalla
-        if ($request->llamar) {
-            $ticket = Ticket::with(['turnos', 'turnos.puestos', 'turnos.puestos.mostradores'])
-                ->where('tickets.id', $request->id)
-                ->first();
+        // Evento para la ventana emergente de la pantalla
+        $ticket = Ticket::with(['turnos', 'turnos.puestos', 'turnos.puestos.mostradores'])
+            ->find($request->id);
+        $ticket->update(['estado' => 1, 'updated_at' => now()]);
+        event(new ventanaTicket($ticket));
+        // Evento que actualiza el listado de Tickets
+        $ultimosTickets = Consultas::ultimosTickets();
+        $coleccionTickets = new Collection($ultimosTickets);
+        event(new listarTickets($coleccionTickets));
 
-            event(new mostrarEnPantalla($ticket));
-        }
         return response()->json(['success' => true]);
     }
 
     public function update(Request $request, $id)
     {
-        // Obtengo datos del turno
-        $turno = Turno::find($id);
-        // Obtengo el id del estado según el valor de $request->estado
-        $estadoId = Estado::where('letra', $request->estado)->value('id');
-        // Crear Historial
-        Historial::create([
-            'turno' => $id,
-            'puesto' => $turno->puesto,
-            'estado' => $estadoId
-        ]);
-        if ($request->estado == 'D') {
-            // Actualizo valor "llamado" del ticket
-            Ticket::find($turno->ticket)->update([
-                'sector' => $request->sector,
-                'derivado' => 1,
-                'llamado' => 0
+        try {
+            $turno = Turno::where('ticket', $id)->latest('id')->first();
+            if (!$turno) {
+                return response()->json(['success' => false, 'message' => 'Turno no encontrado.'], 404);
+            }
+            // Actualizo valores del ticket
+            $ticketData = ['estado' => $request->estado];
+            if ($request->estado == 3) {
+                $ticketData['sector'] = $request->sector;
+            }
+            Ticket::find($turno->ticket)->update($ticketData);
+            // Actualizo valores del Turno
+            $turno->update(['updated_at' => now()]);
+            // Registro el historial
+            Historial::create([
+                'turno' => $turno->id,
+                'puesto' => $turno->puesto,
+                'estado' => $request->estado,
+                'der_para' => $request->userPara
             ]);
-        } elseif ($request->estado == 'P') {
-            // Actualizo valor "llamado" del ticket
-            Ticket::find($turno->ticket)->update([
-                'llamado' => 0
-            ]);
+            // Evento de actualización de tickets
+            $ultimosTickets = Consultas::ultimosTickets();
+            $coleccionTickets = new Collection($ultimosTickets);
+            event(new listarTickets($coleccionTickets));
+            // Respuesta específica para el estado 3
+            if ($request->estado == 3) {
+                return response()->json([
+                    'success' => true,
+                    'ticketId' => $turno->ticket,
+                    'userDe' => User::find($request->userDe)->username,
+                    'userPara' => $request->userPara ? User::find($request->userPara)->username : null,
+                ]);
+            }
+            // return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
-        // Fecha de actualización en Turno
-        $turno->update(['updated_at' => now()]);
+    }
 
-        return response()->json(['success' => true]);
+    public function usuarios(Request $request)
+    {
+        $usuarios = Consultas::usuarios($request->sectorId);
+        if ($usuarios) {
+            return response()->json(['status' => true, 'usuarios' => $usuarios]);
+        }
+        return response()->json(['status' => false]);
     }
 }

@@ -62,34 +62,3 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-
-
-##################################################
-SECCIÓN SISTEMAS
-##################################################
-Proyecto Turnero
-
-La version cuenta con:
-- Interfaz administrativo de materials dashboard.
-- La configuración de todos los modelos de la base de datos.
-- Un CRUD para gestionar Estados, Mostradores, Roles, Sectores y Usuarios.
-- Interfaz y lógica para funcionamiento del Totem en base local.
-- Registro de login y logout para cada usuario, mediante listeners.
-- Archivo con las rutas del proyecto. "rutas.txt"
-- Archivo con la base de datos local. "database.sql"
-- Se agregó css para pantalla.
-- Se confeccionó la lógica de la pantalla.
-- Se crearon laa vista index para pantalla.
-- Se agregó lógica al sidebar.
-- Se modificaron las rutas de totem y pantalla.
-- Se agrego función de impresión de tickets.
-- Se dividio los datos de tickets llamados y atendidos para la pantalla.
-- Se creo un carrusel para los tickets llamados.
-- Se agrego sonido de llamado al carrusel.
-- Buscador de ticket. EN PROCESO (PAUSADO)
-- Pusher instalado y configurado.
-- Real time funcionando.
-- Se creo plantilla events.js para manejar todos los eventos.
-- Se agregó marquesinas a los footers de totem y pantalla.
-- Se agregó funcionalidad de refrescar pagina ante cambios de estados en los turnos.

@@ -8,8 +8,11 @@ class Impresion
 {
     public static function ticket(string $letra, int $numero, int $cantidad)
     {
-        $nombreImpresora = env("NOMBRE_IMPRESORA");
-        $connector = new WindowsPrintConnector($nombreImpresora);
+        $smbImpresora = env("SMB_IMPRESORA");
+        $smbUsername = env('SMB_USERNAME');
+        $smbPassword = env('SMB_PASSWORD');
+        $smbHost = env('SMB_HOST');
+        $connector = new WindowsPrintConnector("smb://" . $smbUsername . ":" . $smbPassword . "@" . $smbHost . "/" . $smbImpresora);
         $printer = new Printer($connector);
         $printer->feed(1);
         $printer->setJustification(Printer::JUSTIFY_CENTER);
@@ -32,7 +35,5 @@ class Impresion
         $printer->feed(3);
         $printer->cut();
         $printer->close();
-
-        return;
     }
 }

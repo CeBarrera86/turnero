@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ticket;
-use App\Models\Turno;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReclamoController extends Controller
 {
@@ -25,6 +23,12 @@ class ReclamoController extends Controller
      */
     public function index()
     {
-        return view('secciones.reclamos.index');
+        $userData = [
+            'userId' => Auth::id(),
+            'puestoId' => Auth::user()->puestos->id,
+            'sectorId' => Auth::user()->puestos->mostradores->sector,
+        ];
+
+        return view('secciones.reclamos.index', compact('userData'));
     }
 }

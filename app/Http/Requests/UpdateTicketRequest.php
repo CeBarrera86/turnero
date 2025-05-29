@@ -24,7 +24,16 @@ class UpdateTicketRequest extends FormRequest
     public function rules()
     {
         return [
-            'dni' => 'required|numeric|digits_between:7,10',
+            'dni' => 'required|numeric|digits_between:7,10', // Entre 7 y 10 dígitos
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'dni.required' => 'El campo DNI es requerido.',
+            'dni.numeric' => 'El campo DNI debe ser numérico.',
+            'dni.digits_between' => 'El campo DNI debe tener entre :min y :max dígitos.',
         ];
     }
 }

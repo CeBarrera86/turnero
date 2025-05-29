@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Rol;
 use App\Http\Requests\StoreRolRequest;
 use App\Http\Requests\UpdateRolRequest;
-use Illuminate\Http\Request;
 
 class RolController extends Controller
 {

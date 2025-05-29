@@ -90,7 +90,12 @@ class SectorController extends Controller
     public function destroy(Sector $sectore)
     {
         $sectore->delete();
-        session()->flash('success', '¡Rol eliminado correctamente!');
+        session()->flash('success', '¡Sector eliminado correctamente!');
         return redirect()->back();
+    }
+
+    public function sectores()
+    {
+        return response()->json(['sectores' => Sector::all()]);
     }
 }

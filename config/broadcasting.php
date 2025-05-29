@@ -37,9 +37,11 @@ return [
             'app_id' => env('PUSHER_APP_ID'),
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
-                'host' => '172.16.14.100', // IP por defecto del websockets o donde se encuntre
-                'port' => 6001, // Puerto por defecto del websockets
-                'useTLS' => true,
+                'encrypted' => true,
+                'host' => '172.16.14.12', // IP por defecto del websockets o donde se encuntre 172.16.14.12
+                'port' => 6001, // Puerto por defecto del websockets 6001
+                'useTLS' => false,
+                'scheme' => 'http',
             ],
         ],
 

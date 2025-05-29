@@ -14,6 +14,7 @@ class Historial extends Model
         'turno',
         'puesto',
         'estado',
+        'der_para',
     ];
 
     public function turnos()
@@ -21,8 +22,8 @@ class Historial extends Model
         return $this->belongsTo('App\Models\Turno', 'turno');
     }
 
-    public function estados()
+    public function users()
     {
-        return $this->belongsTo('App\Models\Estado', 'estado');
+        return $this->belongsTo('App\Models\User', 'der_para');
     }
 }

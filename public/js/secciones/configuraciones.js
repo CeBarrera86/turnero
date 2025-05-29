@@ -1,0 +1,1 @@
+(()=>{"use strict";var e={};e.d=(r,t)=>{for(var n in t)e.o(t,n)&&!e.o(r,n)&&Object.defineProperty(r,n,{enumerable:!0,get:t[n]})},e.o=(e,r)=>Object.prototype.hasOwnProperty.call(e,r);var r=$('meta[name="csrf-token"]').attr("content");axios.interceptors.request.use((function(e){return e.headers["X-CSRF-TOKEN"]=r,e}),(function(e){return Promise.reject(e)}))})();

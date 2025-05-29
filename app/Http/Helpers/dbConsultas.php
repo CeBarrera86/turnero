@@ -1,86 +1,81 @@
 <?php
 
-use App\Models\Historial;
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Ticket;
-use Illuminate\Support\Facades\DB;
+use App\Models\Historial;
 
 class Consultas
 {
-    public static function historiales()
+    public static function tickets($sector, $estado, $cantidad, $incluirUsuarios = false)
     {
-        $historiales = Historial::groupBY('turno')
-            ->select('turno', DB::raw('MAX(historiales.created_at) as created_at'));
-
-        return $historiales;
-    }
-
-    public static function turnos()
-    {
-        $historiales = self::historiales();
-
-        $turnos = Historial::select('turnos.id', 'tickets.alfa', 'mostradores.numero', 'mostradores.tipo', 'tickets.sector', 'historiales.estado', 'users.username', 'clientes.titular')
-            ->leftjoin('turnos', 'turnos.id', 'historiales.turno')
-            ->leftjoin('tickets', 'tickets.id', 'turnos.ticket')
-            ->leftjoin('puestos', 'puestos.id', 'historiales.puesto')
-            ->leftjoin('mostradores', 'mostradores.id', 'puestos.mostrador')
-            ->leftjoin('users', 'puestos.user', 'users.id')
-            ->leftjoin('clientes', 'tickets.cliente', 'clientes.id')
-            ->joinSub($historiales, 'historial', function ($join) {
-                $join->on('historiales.created_at', '=', 'historial.created_at');
-                $join->on('historiales.turno', '=', 'historial.turno');
-            })
-            ->wheredate('historiales.created_at', today()) // Sólo Tickets del día
-            ->whereNotIn('historiales.estado', [2, 4]) // Excepto Estados Culminados y Eliminados
-            ->orderBy('historiales.created_at', 'DESC');
-
-        return $turnos;
-    }
-
-    public static function tickets($der = 0)
-    {
-        $tickets = Ticket::select('tickets.id', 'tickets.alfa', 'clientes.titular')
-            ->leftjoin('clientes', 'clientes.id', 'tickets.cliente')
-            ->where('tickets.llamado', 0)
-            ->where('tickets.derivado', $der)
-            ->where('tickets.eliminado', 0)
-            ->wheredate('tickets.created_at', today());
-
+        $today = Carbon::today();
+        $consulta = Ticket::with('clientes')
+            ->where('sector', $sector)
+            ->where('estado', $estado)
+            ->whereDate('created_at', $today)
+            ->orderBy('created_at', 'asc');
+        // Agregar relaciones adicionales
+        if ($incluirUsuarios && $estado == 3) {
+            $consulta->with(['turnos', 'turnos.puestos.users']);
+        }
+        $tickets = $consulta->take($cantidad)->get();
+        // Añadir la información de usuarios
+        if ($incluirUsuarios && $estado == 3) {
+            $tickets->each(function ($ticket) {
+                // Obtener el historial más reciente con estado 3
+                $historial = Historial::where('turno', $ticket->turnos?->id)
+                        ->where('estado', 3)
+                        ->latest('created_at')
+                        ->first();
+                if ($historial) {
+                    $ticket->userDe = $historial->turnos?->puestos?->users?->username;
+                    $ticket->userPara = $historial->users?->username;
+                }
+            });
+        }
         return $tickets;
     }
 
-    public static function controlRetorno($turno, $turnoSidebar, $nuevoTurno, $nuevoTurnoSidebar)
+    public static function ticketSolicitado($puestoId)
     {
-        if (count($turno) == 0 and count($nuevoTurno) == 0) {
-            if (count($turnoSidebar) == 0 and count($nuevoTurnoSidebar) == 0) {
-                $pantalla = "noRefresh";
-            } else {
-                foreach ($turnoSidebar as $item) {
-                    if (!in_array($item, $nuevoTurnoSidebar)) {
-                        $pantalla = "refresh";
-                        break;
-                    } else {
-                        $pantalla = "noRefresh";
-                    }
-                }
-            }
-        } elseif (count($turno) == 0 and count($nuevoTurno) > 0) {
-            $pantalla = "refreshSonar";
-        } elseif (count($turno) > 0 and count($nuevoTurno) == 0) {
-            $pantalla = "refresh";
-        } else {
-            foreach ($nuevoTurno as $item) {
-                if (!in_array($item, $turno)) {
-                    $pantalla = "refreshSonar";
-                    break;
-                } else {
-                    if (count($nuevoTurno) < count($turno)) {
-                        $pantalla = "refresh";
-                    } else {
-                        $pantalla = "noRefresh";
-                    }
-                }
-            }
-        }
-        return $pantalla;
+        $today = Carbon::today();
+        return Ticket::with('clientes')
+            ->whereHas('turnos', function ($query) use ($puestoId) {
+                $query->where('puesto', $puestoId);
+            })->where('estado', 1)
+            ->whereDate('tickets.created_at', $today)
+            ->first();
+    }
+
+    public static function ultimosTickets()
+    {
+        $today = Carbon::today();
+        return Ticket::with(['turnos', 'turnos.puestos.mostradores'])
+            ->where('estado', 1)
+            ->whereDate('created_at', $today)
+            ->orderBy('updated_at', 'desc')
+            ->take(8)
+            ->get();
+    }
+
+    public static function buscarTicket($letra, $numero)
+    {
+        $today = Carbon::today();
+        return Ticket::with('clientes')
+            ->where('letra', $letra)
+            ->where('numero', $numero)
+            ->whereIn('estado', [2, 3, 4, 5])
+            ->whereDate('created_at', $today)
+            ->first();
+    }
+
+    public static function usuarios($sectorId)
+    {
+        return User::select('users.id', 'users.username')
+            ->leftJoin('puestos', 'puestos.user', '=', 'users.id')
+            ->leftJoin('mostradores', 'puestos.mostrador', '=', 'mostradores.id')
+            ->where('mostradores.sector', $sectorId)
+            ->get();
     }
 }

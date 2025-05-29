@@ -16,10 +16,12 @@ return [
     */
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // 'paths' => ['api/*', 'broadcasting/auth'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => ['*'],
+    // 'allowed_origins' => ['http://172.16.14.26:18000'],
 
     'allowed_origins_patterns' => [],
 

@@ -13,3 +13,6 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+database.sql
+rutas.txt
+asociados.sql

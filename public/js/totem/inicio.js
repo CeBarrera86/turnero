@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",(function(){var e=JSON.parse(localStorage.getItem("cliente"));document.getElementById("clienteTitular").innerText=e.titular}));

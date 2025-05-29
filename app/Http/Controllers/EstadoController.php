@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Estado;
 use App\Http\Requests\StoreEstadoRequest;
 use App\Http\Requests\UpdateEstadoRequest;
-use Illuminate\Support\Facades\Auth;
 
 class EstadoController extends Controller
 {

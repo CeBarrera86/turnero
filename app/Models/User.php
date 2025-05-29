@@ -54,4 +54,9 @@ class User extends Authenticatable
     {
         return $this->hasOne('App\Models\Puesto', 'user');
     }
+
+    public function historiales()
+    {
+        return $this->hasOne('App\Models\Historial', 'der_para');
+    }
 }

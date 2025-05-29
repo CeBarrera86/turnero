@@ -15,13 +15,11 @@ class Ticket extends Model
     protected $table = 'tickets';
 
     protected $fillable = [
-        'alfa',
+        'letra',
+        'numero',
         'cliente',
         'sector',
-        'numero',
-        'llamado',
-        'derivado',
-        'eliminado'
+        'estado',
     ];
 
     protected $dispatchesEvents = [
@@ -42,5 +40,10 @@ class Ticket extends Model
     public function sectores()
     {
         return $this->belongsTo('App\Models\Sector', 'sector');
+    }
+
+    public function estados()
+    {
+        return $this->belongsTo('App\Models\Estado', 'estado');
     }
 }

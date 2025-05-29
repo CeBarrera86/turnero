@@ -20,4 +20,9 @@ class Sector extends Model
     {
         return $this->hasMany('App\Models\Ticket', 'sector');
     }
+
+    public function tareas()
+    {
+        return $this->hasMany('App\Models\Tarea', 'sector');
+    }
 }

@@ -3,23 +3,14 @@
 @section('content')
     <div class="content d-flex align-items-center">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="alert alert-primary tv" style="text-align: center;">
-                        <div id="myCarousel" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner" id="myCarouselCaja">
-                                <!-- Contenido del carrusel Caja -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="alert alert-success tv" style="text-align: center;">
-                        <div id="myCarousel2" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner" id="myCarouselBox">
-                                <!-- Contenido del carrusel Box -->
-                            </div>
-                        </div>
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="table-responsive">
+                        <table id="pantallaTable" class="table">
+                            <h2 style="text-align: center; font-weight: bold; font-size: 50px;">TURNOS</h2>
+                            <tbody id="tablaTurnos">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -29,10 +20,8 @@
 
 @push('js')
     <script>
-        const urlCheckDataCaja = @json(route('pantalla.checkDataCaja'));
-        const urlCheckDataBox = @json(route('pantalla.checkDataBox'));
-        const urlCheckSidebar = @json(route('pantalla.checkSidebar'));
+        const urlTicketsAtendidos = @json(route('pantalla.ticketsAtendidos'));
+        const urlPublicidad = @json(route('pantalla.publicidad'));
     </script>
-    <script type="text/javascript" src="{{ asset('js/pantallas/pantalla.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('js/pantallas/evento.js') }}"></script>
+    <script type="module" src="{{ asset('js/pantallas/main.js') }}"></script>
 @endpush

@@ -27,10 +27,11 @@ class loginSession
      */
     public function handle(Login $event)
     {
+        $codigoUsuario = trim($event->user->username);
         // Se generan los datos para el control de los diferentes Puestos
-        $puesto = new PuestoController();
-        $puesto->store($event->user->id);
-
-        return;
+        if ($codigoUsuario != "falvarez") {
+            $puesto = new PuestoController();
+            $puesto->store($codigoUsuario);
+        }
     }
 }

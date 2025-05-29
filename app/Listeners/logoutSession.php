@@ -6,6 +6,7 @@ use Illuminate\Auth\Events\Logout;
 use App\Http\Controllers\PuestoController;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 
 class logoutSession
 {
@@ -29,8 +30,6 @@ class logoutSession
     {
         // Se generan los datos para actualizar los Puestos
         $puesto = new PuestoController();
-        $puesto->update($event->user->id);
-
-        return;
+        $puesto->update(trim($event->user->username));
     }
 }
